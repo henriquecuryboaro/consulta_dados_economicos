@@ -1,7 +1,7 @@
 WITH CountryProduct AS (SELECT exporter_name, 
 			  SUM(value) AS cnt_prod_export
 			  FROM trade_i_oec_a_sitc2
-			  WHERE sitc2_code = 311121 --vinho
+			  WHERE sitc2_code = 107423 --Rotary pumps
 			  GROUP BY exporter_name, sitc2_code),
 CountryExport AS (SELECT exporter_name, 
 			  SUM(value) AS total_country_export
