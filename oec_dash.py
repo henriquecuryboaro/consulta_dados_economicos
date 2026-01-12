@@ -57,8 +57,6 @@ df['log_razao'] = np.log10(df['Razao_comercial'])
 df_importadores['log_imp'] = np.log10(df_importadores['Total'])
 df_exportadores['log_exp'] = np.log10(df_exportadores['Total'])
 
-print(df_exportadores)
-
 fig = px.choropleth(
     df,
     locations='codigo_pais',
@@ -87,7 +85,7 @@ fig_imp = px.choropleth(
     locations='codigo_pais',
     locationmode='ISO-3',
     color='log_imp',
-    labels={'log_imp': "<b>Exportações de produtos brasileiros (US$)</b>"},
+    labels={'log_imp': "<b>Exportações (US$)</b>"},
     hover_name='importer_name',
     color_continuous_scale='Viridis',
     range_color=(9,11),
@@ -110,7 +108,7 @@ fig_exp = px.choropleth(
     locations='codigo_pais',
     locationmode='ISO-3',
     color='log_exp',
-    labels={'log_exp': "<b>Exportadores de produtos para o Brasil(US$)</b>"},
+    labels={'log_exp': "<b>Importações (US$)</b>"},
     hover_name='exporter_name',
     color_continuous_scale='Viridis',
     range_color=(6,11),
@@ -128,44 +126,51 @@ fig_exp.update_layout({
     height=420
 )
 
-#Sessão de dashboard
 ## Título da página,layout
 st.set_page_config(page_title="Dash teste",layout="wide")
 
-#Título do seu dashboard
-st.write("""
-# Painel de complexidade econômica e trocas comerciais do Brasil
-Navegue pelas seções do painel abaixo
-""")
+def main():
+	#Título do dashboard a ser impresso no corpo do documento
+	st.write("""
+	# Painel de complexidade econômica e trocas comerciais do Brasil
+	""")
+	st.sidebar.title("Menu de navegação")
+	page = st.sidebar.selectbox('Escolha a página',['Visão geral', 'Comparativos'])
 
-st.sidebar.title("Menu")
+	if page == 'Visão geral':
+		#Divisão da área do painel em blocos ('containers')
+		col1,col2 = st.columns(2)
+		con1=col1.container(key="container_azul_1")
+		con2=col2.container(key="container_azul_2")
 
-col1,col2 = st.columns(2)
-con1=col1.container(key="container_azul_1")
-con2=col2.container(key="container_azul_2")
+		#Configuração do fundo dos 'containers'
+		def load_css():
+			return """
+		<style>
+			/* Target the inner container created by Streamlit */
+			.st-key-container_azul_1 > div,
+			.st-key-container_azul_2 > div,
+			.st-key-container_azul_3 > div {
+				background-color: rgba(173, 216, 230, 0.3);
+				border-radius: 10px;
+				padding: 20px;
+				min-height: 500px;
+			}
+			</style>
+			"""
 
-def load_css():
-    return """
-  <style>
-    /* Target the inner container created by Streamlit */
-    .st-key-container_azul_1 > div,
-    .st-key-container_azul_2 > div,
-    .st-key-container_azul_3 > div {
-        background-color: rgba(100, 100, 200, 0.3);
-        border-radius: 10px;
-        padding: 20px;
-        min-height: 500px;
-    }
-    </style>
-    """
+		st.markdown(load_css(), unsafe_allow_html=True)
 
-st.markdown(load_css(), unsafe_allow_html=True)
+		#Atribuição de objetos às áreas definidas por 'containers'
+		with con1:
+			st.plotly_chart(fig_imp)
+			st.plotly_chart(fig)
 
-
-with con1:
-    st.plotly_chart(fig_imp)
-    st.plotly_chart(fig)
-
-with con2:
-    st.plotly_chart(fig_exp)
-    st.write("**Seção 4**")
+		with con2:
+			st.plotly_chart(fig_exp)
+			st.write("**Seção 4**")
+	if page == 'Comparativos':
+		st.title('Conteúdo de comparativos ainda vai ser preenchido!')
+				
+if __name__ == "__main__":
+    main()
