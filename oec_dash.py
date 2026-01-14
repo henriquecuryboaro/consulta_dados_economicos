@@ -64,11 +64,36 @@ SELECT DISTINCT importer_name
 FROM trade_i_oec_a_sitc2
 WHERE exporter_name = 'Brazil'
 GROUP BY importer_name, exporter_name
-""")                 
+""")
 
 with engine.connect() as conn:
     df, df_importadores = pd.read_sql_query(query_saldo_balanca, conn), pd.read_sql_query(query_importadores, conn)
     df_exportadores, df_pauta, df_destino = pd.read_sql_query(query_exportadores, conn), pd.read_sql_query(query_pauta, conn), pd.read_sql_query(query_paises_destino, conn)
+
+def funcoes_comparativas(pais):
+	with engine.connect() as conn:
+		query_compara_brasil = text("""
+			SELECT (SELECT SUM(value) FROM trade_i_oec_a_sitc2 WHERE exporter_name = :pais) AS "Total de exportações (US$)",
+		(SELECT SUM(value) FROM trade_i_oec_a_sitc2 WHERE exporter_name = :pais AND importer_name = 'Brazil') AS "Exportações para o Brasil (US$)"
+			""")
+		query_top_cinco = text(f"""
+		SELECT  product_name AS Produto,
+			sitc2_code AS "Código SITC2",
+			100.0*(ROUND((SUM(value)*1.0/(SELECT SUM(value) FROM trade_i_oec_a_sitc2 WHERE exporter_name = :pais GROUP BY exporter_name)),5)) AS "Participação na pauta do país (%)"
+			FROM trade_i_oec_a_sitc2
+			WHERE exporter_name = :pais AND product_name <> 'Unclassified Transactions'
+			GROUP BY 1
+			ORDER BY 3 DESC
+			LIMIT 5
+			""")
+		
+		df_comparado = pd.read_sql(query_compara_brasil, conn, params={"pais": pais})
+		df_top_cinco = pd.read_sql(query_top_cinco, conn, params={"pais": pais})
+
+	return df_comparado, df_top_cinco              
+
+# dados_comparados = (funcoes_comparativas('Germany'))
+# print(dados_comparados[1])
     
 df['log_razao'] = np.log10(df['Razao_comercial'])
 df_importadores['log_imp'] = np.log10(df_importadores['Total'])
@@ -184,7 +209,8 @@ st.set_page_config(page_title="Dash teste",layout="wide")
 def main():
 	#Título do dashboard a ser impresso no corpo do documento
 	st.write("""
-	# Painel de complexidade econômica e trocas comerciais do Brasil
+	# Painel de complexidade econômica e trocas comerciais do Brasil - Dados de 2018
+	Dados de 2018 - Fonte: Observatório da Complexidade Econômica
 	""")
 	st.sidebar.title("Menu de navegação")
 	page = st.sidebar.selectbox('Escolha a página',['Visão geral', 'Comparativos'])
@@ -207,21 +233,28 @@ def main():
 			st.plotly_chart(fig_tree_pauta)
 	if page == 'Comparativos':
 		pais_alvo = st.selectbox('Escolha o país para visualizar dados', df_destino['importer_name'])
+		dados_comparados = (funcoes_comparativas(pais_alvo))
+		comparacao = dados_comparados[0]
+		topcinco = dados_comparados[1]
 		
         #Divisão da área do painel em blocos ('containers')
-		col1,col2 = st.columns(2)
-		con1=col1.container(key="container_azul_1")
-		con2=col2.container(key="container_azul_2")
+		(col1,) = st.columns(1)
+		con1=col1.container(key="container_azul_1_comparativos")
 
-		st.markdown(load_css(), unsafe_allow_html=True)
+		st.markdown("""
+		<style>
+		[data-testid="stDataFrame"] {
+			font-size: 22px;
+		}
+		</style>
+		""", unsafe_allow_html=True)
 		
-        		#Atribuição de objetos às áreas definidas por 'containers'
+        #Atribuição de objetos às áreas definidas por 'containers'
 		with con1:
-			st.write('**Seção 1**')
-
-		with con2:
-			st.write('**Seção 2**')
-
+			st.write("Valor de todas as exportações do país e daquelas destinadas ao Brasil")
+			st.dataframe(comparacao, hide_index=True)
+			st.write("Cinco produtos de maior participação na pauta exportadora do país")
+			st.dataframe(topcinco, hide_index=True)
 				
 if __name__ == "__main__":
     main()
