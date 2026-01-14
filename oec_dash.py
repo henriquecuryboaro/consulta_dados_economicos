@@ -91,9 +91,6 @@ def funcoes_comparativas(pais):
 		df_top_cinco = pd.read_sql(query_top_cinco, conn, params={"pais": pais})
 
 	return df_comparado, df_top_cinco              
-
-# dados_comparados = (funcoes_comparativas('Germany'))
-# print(dados_comparados[1])
     
 df['log_razao'] = np.log10(df['Razao_comercial'])
 df_importadores['log_imp'] = np.log10(df_importadores['Total'])
@@ -251,9 +248,9 @@ def main():
 		
         #Atribuição de objetos às áreas definidas por 'containers'
 		with con1:
-			st.write("Valor de todas as exportações do país e daquelas destinadas ao Brasil")
+			st.write("**Valor de todas as exportações do país e daquelas destinadas ao Brasil**")
 			st.dataframe(comparacao, hide_index=True)
-			st.write("Cinco produtos de maior participação na pauta exportadora do país")
+			st.write("**Cinco produtos de maior participação na pauta exportadora do país**")
 			st.dataframe(topcinco, hide_index=True)
 				
 if __name__ == "__main__":
