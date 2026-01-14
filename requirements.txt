@@ -1,0 +1,6 @@
+sqlalchemy
+pathlib
+panda
+plotly
+numpy
+streamlit 
